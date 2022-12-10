@@ -47,8 +47,8 @@ $$
 
 $$
 \begin{align*}
-\argmax_{\phi,\theta} \mathbb{E}_{q_\phi(z|x)}[\log p_\theta(x|z)] - D_{KL}(q_\phi(z|x) \ || \ p(z)) \\
-\approx \argmax_{\phi,\theta} \sum^L_{l=1}[\log p_\theta(x|z^{(l)})] - D_{KL}(q_\phi(z|x) \ || \ p(z))
+\arg\max_{\phi,\theta} \mathbb{E}_{q_\phi(z|x)}[\log p_\theta(x|z)] - D_{KL}(q_\phi(z|x) \ || \ p(z)) \\
+\approx \arg\max_{\phi,\theta} \sum^L_{l=1}[\log p_\theta(x|z^{(l)})] - D_{KL}(q_\phi(z|x) \ || \ p(z))
 \end{align*}
 $$
 
@@ -86,9 +86,9 @@ HVAE but with three key restrictions:
 $\implies q_\phi(z_{1:T}|x)= q(z_{1:T}|x_0) = \prod^T_{t=1}q(x_t|x_{t-1})$
 
 - The structure of the latent encoder at each timestep is not learned; it is pre-defined as a linear Gaussian model
-$\implies$ The latent encoder is a Gaussian distribution centered around the output of the previous timestep $\implies q(x_t|x_{t-1}) = \mathcal{N}(x_t;\sqrt{\alpha_t}x_{t-1}, (1-\alpha_t)\bold{I})$
+$\implies$ The latent encoder is a Gaussian distribution centered around the output of the previous timestep $\implies q(x_t|x_{t-1}) = \mathcal{N}(x_t;\sqrt{\alpha_t}x_{t-1}, (1-\alpha_t)\pmb{I})$
 
-- The Gaussian parameters of the latent encoders vary over time in such a way that the distribution of the latent at final timestep T is a standard Gaussian $\implies p(x_T)=\mathcal{N}(x_T;0,\bold{I})$, which is pure noise
+- The Gaussian parameters of the latent encoders vary over time in such a way that the distribution of the latent at final timestep T is a standard Gaussian $\implies p(x_T)=\mathcal{N}(x_T;0,\pmb{I})$, which is pure noise
 
 ### Parameters
 
@@ -101,18 +101,17 @@ $\implies$ The latent encoder is a Gaussian distribution centered around the out
 $$
 \begin{align*}
 \log p(x) 
-    \geq \mathbb{E}_{q(x_1|x_0)}[\log p_\theta(x_0|x_1)]
- - D_{KL}(q(x_T|x_0) \ || \ p(x_T)) \\
-- \sum^T_{t=2} \mathbb{E}_{q(x_t|x_0)}[D_{KL}(q(x_{t-1}|x_t,x_0) \ || \ p_\theta(x_{t-1}|x_t))]
+    \geq \mathbb{E}_{q(x_1|x_0)}[\log p_\theta(x_0|x_1)] - D_{KL}(q(x_T|x_0) \ || \ p(x_T)) \\
+    - \sum^T_{t=2} \mathbb{E}_{q(x_t|x_0)}[D_{KL}(q(x_{t-1}|x_t,x_0) \ || \ p_\theta(x_{t-1}|x_t))]
 \end{align*}
 $$
 
-- $\mathbb{E}_{q(x_1|x_0)}[\log p_\theta(x_0|x_1)]$ measures the reconstruction likelihood of the decoder from the variational distribution. (Monte Carlo estimate)
+- The first term measures the reconstruction likelihood of the decoder from the variational distribution. (Monte Carlo estimate)
 
-- $D_{KL}(q(x_T|x_0) \ || \ p(x_T))$ measures how close the distribution of the final nosisified input is to the standard Gaussian prior.
+- The second term measures how close the distribution of the final nosisified input is to the standard Gaussian prior.
 > Note that it has no trainable parameters, and is also equal to zero under the assumptions.
 
-- $\sum^T_{t=2} \mathbb{E}_{q(x_t|x_0)}[D_{KL}(q(x_{t-1}|x_t,x_0) \ || \ p_\theta(x_{t-1}|x_t))]$ is a *denoising matching term*. We learn desired denoising transition step $p_\theta(x_{t-1}|x_t)$ as an approximation to tracable, ground-truth denoising transition step $q(x_{t-1}|x_t, x_0)$.
+- The third term is for *denoising matching*. We learn desired denoising transition step $p_\theta(x_{t-1}|x_t)$ as an approximation to tracable, ground-truth denoising transition step $q(x_{t-1}|x_t, x_0)$.
 > Note that when $T=1$, VDM's ELBO falls back into VAE's.
 
 > Note that the *denoising matching term* dominates the overall optimization cost because of the summation term.
@@ -121,7 +120,7 @@ $$
 For learning a neural network to predict the original ground truth image from an arbitrarily noisified version of it, minimize the summation term of the derived ELBO objective across all noise levels, which can be approximated by minimizing the expectation over all timesteps:
 
 $$
-\argmin_\theta \mathbb{E}_{t \sim U{2,T}}[\mathbb{E}_{q(x_t|x_0)}D_{KL}(q(x_{t-1}|x_t,x_0) \ || \ p_\theta(x_{t-1}|x_t))]
+\arg\min_\theta \mathbb{E}_{t \sim U{2,T}}[\mathbb{E}_{q(x_t|x_0)}D_{KL}(q(x_{t-1}|x_t,x_0) \ || \ p_\theta(x_{t-1}|x_t))]
 $$
 
 which can be optimized using stochastic samples over timesteps.
